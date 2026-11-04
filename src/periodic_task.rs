@@ -17,13 +17,13 @@ pub trait TaskResultData<const TN: usize> {
     fn header() -> [&'static str; TN];
 
     fn name(&self) -> &str;
-    fn write_data<W: std::fmt::Write>(&self, writer: W);
+    fn write_data<W: std::fmt::Write>(&self, writer: W) -> Result<(), std::fmt::Error>;
 }
 
 pub trait JobResultData<const JN: usize, Task> {
     fn header() -> [&'static str; JN];
 
-    fn write_data<W: std::fmt::Write>(&self, task: &Task, writer: W);
+    fn write_data<W: std::fmt::Write>(&self, task: &Task, writer: W) -> Result<(), std::fmt::Error>;
 }
 
 pub struct ResultWriter<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultData<JN, Task>> {
@@ -46,23 +46,26 @@ impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultD
         self.results.len()
     }
 
-    pub fn write_header<W: std::fmt::Write>(mut writer: W) {
-        let _ = write!(writer, "Name\tJobNum");
+    pub fn write_header<W: std::fmt::Write>(mut writer: W) -> Result<(), std::fmt::Error> {
+        write!(writer, "Name\tJobNum")?;
         for field in Task::header() {
-            let _ = write!(writer, "\t{}", field);
+            write!(writer, "\t{}", field)?;
         }
         for field in Job::header() {
-            let _ = write!(writer, "\t{}", field);
+            write!(writer, "\t{}", field)?;
         }
-        let _ = write!(writer, "\n");
+        write!(writer, "\n")?;
+        Ok(())
     }
 
-    pub fn write_back<W: std::fmt::Write>(self, mut writer: W) {
+    pub fn write_back<W: std::fmt::Write>(self, mut writer: W) -> Result<(), std::fmt::Error> {
         for (job_num, job) in self.results.into_iter().enumerate() {
-            let _ = write!(&mut writer, "{}\t{}", self.task.name(), job_num);
-            self.task.write_data(&mut writer);
-            job.write_data(&self.task, &mut writer);
-            let _ = write!(writer, "\n");
+            write!(&mut writer, "{}\t{}", self.task.name(), job_num)?;
+            self.task.write_data(&mut writer)?;
+            job.write_data(&self.task, &mut writer)?;
+            write!(writer, "\n")?;
         }
+
+        Ok(())
     }
 }

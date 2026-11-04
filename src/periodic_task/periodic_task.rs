@@ -10,10 +10,49 @@ pub struct Task {
     pub calibration_value: Option<Time>,
 }
 
+pub struct JobResult {
+    pub activation: Time,
+    pub start: Time,
+    pub end: Time,
+}
+
+impl TaskResultData<3> for Task {
+    fn header() -> [&'static str; 3] {
+        ["Runtime","Deadline","Period"]
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn write_data<W: std::fmt::Write>(&self, mut writer: W) -> Result<(), std::fmt::Error> {
+        write!(writer, "\t{:.0}\t{:.0}\t{:.0}",
+            self.runtime.as_nanos(),
+            self.deadline.as_nanos(),
+            self.period.as_nanos(),
+        )
+    }
+}
+
+impl JobResultData<4, Task> for JobResult {
+    fn header() -> [&'static str; 4] {
+        ["Activation","Start","Deadline","FinishingTime"]
+    }
+
+    fn write_data<W: std::fmt::Write>(&self, task: &Task, mut writer: W) -> Result<(), std::fmt::Error> {
+        write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
+            self.activation.as_nanos(),
+            self.start.as_nanos(),
+            (self.activation + task.deadline).as_nanos(),
+            self.end.as_nanos(),
+        )
+    }
+}
+
 impl RtSynthThread for Task {
-    fn run<W: std::fmt::Write>(&self, abs_start_time: Time, max_time: Option<Time>, signal: TerminateSignal, writer: W) {
+    fn run<W: std::fmt::Write>(&self, abs_start_time: Time, max_time: Option<Time>, signal: TerminateSignal, writer: W) -> Result<(), std::fmt::Error> {
         let cpu_hogger = new_cpu_hogger(self.runtime, self.calibration_value);
-        // let mut results = ResultWriter::new(&self.name, self.runtime);
+        let mut results = ResultWriter::new(self.clone());
 
         let start_time = abs_start_time;
         let mut next_activation = start_time;
@@ -26,13 +65,11 @@ impl RtSynthThread for Task {
             let job_end_time = clock::Monotonic::now();
 
             // report results
-            // results.push((
-            //     next_activation,
-            //     next_activation,
-            //     job_start_time,
-            //     next_activation + self.deadline,
-            //     job_end_time,
-            // ));
+            results.push(JobResult {
+                activation: next_activation,
+                start: job_start_time,
+                end: job_end_time,
+            });
 
             // wait for next job
             next_activation = next_activation + self.period;
@@ -42,21 +79,19 @@ impl RtSynthThread for Task {
         }
 
         // report non-performed jobs
-        // let total_jobs = (max_time.unwrap_or(end_time - start_time) / self.period).floor() as usize;
-        // let performed_jobs = results.len();
+        let total_jobs = (max_time.unwrap_or(end_time - start_time) / self.period).floor() as usize;
+        let performed_jobs = results.len();
 
-        // for job_num in performed_jobs..total_jobs {
-        //     let next_activation = job_num as f64 * self.period + start_time;
+        for job_num in performed_jobs..total_jobs {
+            let next_activation = job_num as f64 * self.period + start_time;
 
-        //     results.push((
-        //         next_activation,
-        //         Time::nanos(f64::MAX),
-        //         Time::nanos(f64::MAX),
-        //         (next_activation + self.deadline),
-        //         Time::nanos(f64::MAX),
-        //     ));
-        // }
+            results.push(JobResult {
+                activation: next_activation,
+                start: Time::infinity(),
+                end: Time::infinity()
+            });
+        }
 
-        // results.write_back(writer);
+        results.write_back(writer)
     }
 }

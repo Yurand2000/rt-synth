@@ -378,14 +378,14 @@ impl<'a> TaskResultData<5> for PTOTaskHeader<'a> {
         &self.task.name
     }
 
-    fn write_data<W: std::fmt::Write>(&self, mut writer: W) {
-        let _ = write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
+    fn write_data<W: std::fmt::Write>(&self, mut writer: W) -> Result<(), std::fmt::Error> {
+        write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
             self.task.uplink.as_nanos(),
             self.task.runtime.as_nanos(),
             self.task.downlink.as_nanos(),
             self.task.deadline.as_nanos(),
             self.task.period.as_nanos(),
-        );
+        )
     }
 }
 
@@ -402,15 +402,15 @@ impl JobResultData<6, PTOTaskHeader<'_>> for PTOJobHeader {
         ["AbsReleaseTime", "AbsWakeupTime", "AbsUplinlStartTime", "AbsDownlinkStartTime", "AbsEndTime", "AbsDeadline"]
     }
 
-    fn write_data<W: std::fmt::Write>(&self, task: &PTOTaskHeader, mut writer: W) {
-        let _ = write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
+    fn write_data<W: std::fmt::Write>(&self, task: &PTOTaskHeader, mut writer: W) -> Result<(), std::fmt::Error> {
+        write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
             self.release.as_nanos(),
             self.start.as_nanos(),
             self.uplink_finish.as_nanos(),
             self.downlink_start.as_nanos(),
             self.end.as_nanos(),
             (self.release + task.task.deadline).as_nanos(),
-        );
+        )
     }
 }
 

@@ -53,5 +53,5 @@ pub fn start_rt_thread<F, T>(function: F, rt_prio: Option<i32>, signal: Terminat
 }
 
 pub trait RtSynthThread {
-    fn run<W: std::fmt::Write>(&self, abs_start_time: Time, max_time: Option<Time>, signal: TerminateSignal, writer: W);
+    fn run<W: std::fmt::Write>(&self, abs_start_time: Time, max_time: Option<Time>, signal: TerminateSignal, writer: W) -> Result<(), std::fmt::Error>;
 }

@@ -36,7 +36,6 @@ fn main() {
             task.calibration_value = calibration_value;
         });
 
-
     let mut ctrlc_signal = signal.clone();
     pid::set_handler(pid::Signal::SIGINT, move |_| { ctrlc_signal.set(true); }).unwrap();
 
@@ -60,7 +59,7 @@ fn main() {
         .collect();
 
     let mut data = String::new();
-    // ResultWriter::write_header(&mut data);
+    ResultWriter::write_header(&mut data);
     print!("{data}");
     for thread in threads {
         let data = thread.join().unwrap().unwrap();
