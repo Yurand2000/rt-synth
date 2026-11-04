@@ -7,9 +7,9 @@ struct Args {
     #[arg(short= 'c')]
     calibration_value_ns: Option<f64>,
 
-    /// Max runtime in ms
+    /// Max runtime in seconds
     #[arg(short= 't')]
-    max_time_ms: Option<u64>,
+    max_time: Option<f64>,
 
     /// Periodic Tasks to emulate, ordered in decreasing priority, separated by
     /// spaces
@@ -28,7 +28,7 @@ fn main() {
 
     let signal = TerminateSignal::new();
     let calibration_value = args.calibration_value_ns.map(|t| Time::nanos(t));
-    let max_time = args.max_time_ms.map(|t| Time::millis(t as f64));
+    let max_time = args.max_time.map(|t| Time::secs(t));
 
     args.taskset.iter_mut().enumerate()
         .for_each(|(i, task)| {

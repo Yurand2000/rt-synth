@@ -26,7 +26,7 @@ impl TaskResultData<3> for Task {
     }
 
     fn write_data<W: std::fmt::Write>(&self, mut writer: W) -> Result<(), std::fmt::Error> {
-        write!(writer, "\t{:.0}\t{:.0}\t{:.0}",
+        write!(writer, ",{:.0},{:.0},{:.0}",
             self.runtime.as_nanos(),
             self.deadline.as_nanos(),
             self.period.as_nanos(),
@@ -36,11 +36,11 @@ impl TaskResultData<3> for Task {
 
 impl JobResultData<4, Task> for JobResult {
     fn header() -> [&'static str; 4] {
-        ["Activation","Start","Deadline","FinishingTime"]
+        ["JobActivation","JobStart","JobDeadline","JobEnd"]
     }
 
     fn write_data<W: std::fmt::Write>(&self, task: &Task, mut writer: W) -> Result<(), std::fmt::Error> {
-        write!(writer, "\t{:.0}\t{:.0}\t{:.0}\t{:.0}",
+        write!(writer, ",{:.0},{:.0},{:.0},{:.0}",
             self.activation.as_nanos(),
             self.start.as_nanos(),
             (self.activation + task.deadline).as_nanos(),

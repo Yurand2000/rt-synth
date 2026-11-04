@@ -40,12 +40,12 @@ impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultD
     }
 
     pub fn write_header<W: std::fmt::Write>(mut writer: W) -> Result<(), std::fmt::Error> {
-        write!(writer, "Name\tJobNum")?;
+        write!(writer, "Name,JobNum")?;
         for field in Task::header() {
-            write!(writer, "\t{}", field)?;
+            write!(writer, ",{}", field)?;
         }
         for field in Job::header() {
-            write!(writer, "\t{}", field)?;
+            write!(writer, ",{}", field)?;
         }
         write!(writer, "\n")?;
         Ok(())
@@ -53,7 +53,7 @@ impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultD
 
     pub fn write_back<W: std::fmt::Write>(self, mut writer: W) -> Result<(), std::fmt::Error> {
         for (job_num, job) in self.results.into_iter().enumerate() {
-            write!(&mut writer, "{}\t{}", self.task.name(), job_num)?;
+            write!(&mut writer, "{},{}", self.task.name(), job_num)?;
             self.task.write_data(&mut writer)?;
             job.write_data(&self.task, &mut writer)?;
             write!(writer, "\n")?;
