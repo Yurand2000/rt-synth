@@ -1,0 +1,68 @@
+pub mod prelude {
+    pub use super::periodic_task_offloaded::prelude::*;
+    pub use super::{
+        periodic_task::Task as PeriodicTask,
+        periodic_task_jitter::Task as PeriodicTaskJitter,
+        ResultWriter,
+        TaskResultData,
+        JobResultData,
+    };
+}
+
+pub mod periodic_task;
+pub mod periodic_task_jitter;
+pub mod periodic_task_offloaded;
+
+pub trait TaskResultData<const TN: usize> {
+    fn header() -> [&'static str; TN];
+
+    fn name(&self) -> &str;
+    fn write_data<W: std::fmt::Write>(&self, writer: W);
+}
+
+pub trait JobResultData<const JN: usize, Task> {
+    fn header() -> [&'static str; JN];
+
+    fn write_data<W: std::fmt::Write>(&self, task: &Task, writer: W);
+}
+
+pub struct ResultWriter<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultData<JN, Task>> {
+    task: Task,
+    results: Vec<Job>,
+}
+
+impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultData<JN, Task>>
+    ResultWriter<TN, JN, Task, Job>
+{
+    pub fn new(task: Task) -> Self {
+        Self { task, results: Vec::new() }
+    }
+
+    pub fn push(&mut self, data: Job) {
+        self.results.push(data);
+    }
+
+    pub fn len(&self) -> usize {
+        self.results.len()
+    }
+
+    pub fn write_header<W: std::fmt::Write>(mut writer: W) {
+        let _ = write!(writer, "Name\tJobNum");
+        for field in Task::header() {
+            let _ = write!(writer, "\t{}", field);
+        }
+        for field in Job::header() {
+            let _ = write!(writer, "\t{}", field);
+        }
+        let _ = write!(writer, "\n");
+    }
+
+    pub fn write_back<W: std::fmt::Write>(self, mut writer: W) {
+        for (job_num, job) in self.results.into_iter().enumerate() {
+            let _ = write!(&mut writer, "{}\t{}", self.task.name(), job_num);
+            self.task.write_data(&mut writer);
+            job.write_data(&self.task, &mut writer);
+            let _ = write!(writer, "\n");
+        }
+    }
+}
