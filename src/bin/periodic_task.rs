@@ -16,7 +16,7 @@ struct Args {
     ///
     /// Task format: [<runtime_us>,<deadline_us>,<period_us>]
     #[arg(value_parser= parse_periodic_task)]
-    taskset: Vec<PeriodicTask>,
+    taskset: Vec<periodic_task::Task>,
 }
 
 fn main() {
@@ -52,14 +52,14 @@ fn main() {
                 eprintln!("Starting rt thread of PID {}, task {}", std::process::id(), task.name);
 
                 let mut data = String::new();
-                task.run(start_time, max_time, signal, &mut data);
+                task.run(start_time, max_time, signal, &mut data)?;
                 Ok(data)
             }, Some(rt_prio), signal.clone())
         })
         .collect();
 
     let mut data = String::new();
-    ResultWriter::write_header(&mut data);
+    ResultWriter::<_, _, periodic_task::Task, periodic_task::JobResult>::write_header(&mut data).unwrap();
     print!("{data}");
     for thread in threads {
         let data = thread.join().unwrap().unwrap();
@@ -68,7 +68,7 @@ fn main() {
     }
 }
 
-fn parse_periodic_task(data: &str) -> anyhow::Result<PeriodicTask> {
+fn parse_periodic_task(data: &str) -> anyhow::Result<periodic_task::Task> {
     let data = data.trim()
         .strip_prefix("[").and_then(|d| d.strip_suffix("]"))
         .ok_or_else(|| anyhow::format_err!("Missing [ or ] delimiters"))?;
@@ -78,7 +78,7 @@ fn parse_periodic_task(data: &str) -> anyhow::Result<PeriodicTask> {
         return Err(anyhow::format_err!("Invalid task format"));
     }
 
-    Ok(PeriodicTask {
+    Ok(periodic_task::Task {
         name: String::with_capacity(0),
         runtime: Time::micros(piecies[0].parse()?),
         deadline: Time::micros(piecies[1].parse()?),

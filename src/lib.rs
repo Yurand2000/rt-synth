@@ -3,7 +3,8 @@ use crate::prelude::*;
 
 pub mod prelude {
     pub use libtux::prelude::Time;
-    pub use super::periodic_task::prelude::*;
+    pub use super::results::prelude::*;
+    pub use super::tasks::*;
     pub use super::utils::prelude::*;
     pub use super::{
         RtSynthThread,
@@ -12,8 +13,12 @@ pub mod prelude {
     };
 }
 
-pub mod periodic_task;
+pub mod results;
 pub mod utils;
+
+pub mod tasks {
+    pub mod periodic_task;
+}
 
 #[derive(Debug, Clone)]
 pub struct TerminateSignal(Arc<AtomicBool>);
