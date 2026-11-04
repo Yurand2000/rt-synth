@@ -3,7 +3,7 @@ use libtux::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Task {
-    pub name: String,
+    pub num: u64,
     pub runtime: Time,
     pub deadline: Time,
     pub period: Time,
@@ -19,10 +19,6 @@ pub struct JobResult {
 impl TaskResultData<3> for Task {
     fn header() -> [&'static str; 3] {
         ["Runtime","Deadline","Period"]
-    }
-
-    fn name(&self) -> &str {
-        &self.name
     }
 
     fn write_data<W: std::fmt::Write>(&self, mut writer: W) -> Result<(), std::fmt::Error> {
@@ -52,7 +48,7 @@ impl JobResultData<4, Task> for JobResult {
 impl RtSynthThread for Task {
     fn run<W: std::fmt::Write>(&self, abs_start_time: Time, max_time: Option<Time>, signal: TerminateSignal, writer: W) -> Result<(), std::fmt::Error> {
         let cpu_hogger = new_cpu_hogger(self.runtime, self.calibration_value);
-        let mut results = ResultWriter::new(self.clone());
+        let mut results = ResultWriter::new(self.clone(), self.num);
 
         let start_time = abs_start_time;
         let mut next_activation = start_time;

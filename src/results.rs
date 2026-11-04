@@ -9,7 +9,6 @@ pub mod prelude {
 pub trait TaskResultData<const TN: usize> {
     fn header() -> [&'static str; TN];
 
-    fn name(&self) -> &str;
     fn write_data<W: std::fmt::Write>(&self, writer: W) -> Result<(), std::fmt::Error>;
 }
 
@@ -21,14 +20,15 @@ pub trait JobResultData<const JN: usize, Task> {
 
 pub struct ResultWriter<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultData<JN, Task>> {
     task: Task,
+    task_num: u64,
     results: Vec<Job>,
 }
 
 impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultData<JN, Task>>
     ResultWriter<TN, JN, Task, Job>
 {
-    pub fn new(task: Task) -> Self {
-        Self { task, results: Vec::new() }
+    pub fn new(task: Task, task_num: u64) -> Self {
+        Self { task, task_num, results: Vec::new() }
     }
 
     pub fn push(&mut self, data: Job) {
@@ -40,7 +40,7 @@ impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultD
     }
 
     pub fn write_header<W: std::fmt::Write>(mut writer: W) -> Result<(), std::fmt::Error> {
-        write!(writer, "Name,JobNum")?;
+        write!(writer, "TaskNum,JobNum")?;
         for field in Task::header() {
             write!(writer, ",{}", field)?;
         }
@@ -53,7 +53,7 @@ impl<const TN: usize, const JN: usize, Task: TaskResultData<TN>, Job: JobResultD
 
     pub fn write_back<W: std::fmt::Write>(self, mut writer: W) -> Result<(), std::fmt::Error> {
         for (job_num, job) in self.results.into_iter().enumerate() {
-            write!(&mut writer, "{},{}", self.task.name(), job_num)?;
+            write!(&mut writer, "{},{}", self.task_num, job_num)?;
             self.task.write_data(&mut writer)?;
             job.write_data(&self.task, &mut writer)?;
             write!(writer, "\n")?;

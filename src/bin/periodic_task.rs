@@ -32,7 +32,7 @@ fn main() {
 
     args.taskset.iter_mut().enumerate()
         .for_each(|(i, task)| {
-            task.name = format!("Task{i:03}");
+            task.num = i as u64;
             task.calibration_value = calibration_value;
         });
 
@@ -49,7 +49,7 @@ fn main() {
             let rt_prio = 99 - i as i32;
 
             start_rt_thread(move |signal| {
-                eprintln!("Starting rt thread of PID {}, task {}", std::process::id(), task.name);
+                eprintln!("Starting rt thread of PID {}, task {}", std::process::id(), task.num);
 
                 let mut data = String::new();
                 task.run(start_time, max_time, signal, &mut data)?;
@@ -79,7 +79,7 @@ fn parse_periodic_task(data: &str) -> anyhow::Result<periodic_task::Task> {
     }
 
     Ok(periodic_task::Task {
-        name: String::with_capacity(0),
+        num: 0,
         runtime: Time::micros(piecies[0].parse()?),
         deadline: Time::micros(piecies[1].parse()?),
         period: Time::micros(piecies[2].parse()?),
