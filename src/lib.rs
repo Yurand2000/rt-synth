@@ -50,7 +50,7 @@ pub fn start_rt_thread<F, T>(function: F, name: &str, rt_prio: Option<i32>, sign
         .name(name.into())
         .spawn(move || {
             pid::set_sched_policy(
-                Pid(std::process::id()),
+                Pid::current(),
                 policy,
                 pid::SchedFlags::empty()
             )?;
