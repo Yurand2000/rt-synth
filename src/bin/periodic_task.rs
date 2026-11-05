@@ -54,7 +54,7 @@ fn main() {
                 let mut data = String::new();
                 task.run(start_time, max_time, signal, &mut data)?;
                 Ok(data)
-            }, Some(rt_prio), signal.clone())
+            }, &format!("rt-synth-{i}"), Some(rt_prio), signal.clone())
         })
         .collect();
 

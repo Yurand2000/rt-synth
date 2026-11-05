@@ -37,7 +37,7 @@ impl TerminateSignal {
     }
 }
 
-pub fn start_rt_thread<F, T>(function: F, rt_prio: Option<i32>, signal: TerminateSignal) -> JoinHandle<anyhow::Result<T>>
+pub fn start_rt_thread<F, T>(function: F, name: &str, rt_prio: Option<i32>, signal: TerminateSignal) -> JoinHandle<anyhow::Result<T>>
     where F: FnOnce(TerminateSignal) -> anyhow::Result<T> + Send + 'static, T: Send + 'static
 {
     use libtux::prelude::*;
@@ -46,15 +46,18 @@ pub fn start_rt_thread<F, T>(function: F, rt_prio: Option<i32>, signal: Terminat
         .map(|prio| pid::SchedPolicy::FIFO(prio))
         .unwrap_or(pid::SchedPolicy::other());
 
-    std::thread::spawn(move || {
-        pid::set_sched_policy(
-            Pid(std::process::id()),
-            policy,
-            pid::SchedFlags::empty()
-        )?;
+    std::thread::Builder::new()
+        .name(name.into())
+        .spawn(move || {
+            pid::set_sched_policy(
+                Pid(std::process::id()),
+                policy,
+                pid::SchedFlags::empty()
+            )?;
 
-        function(signal)
-    })
+            function(signal)
+        })
+        .unwrap()
 }
 
 pub trait RtSynthThread {
