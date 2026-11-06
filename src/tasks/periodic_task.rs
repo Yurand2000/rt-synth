@@ -56,7 +56,7 @@ impl RtSynthThread for Task {
         clock::Monotonic::sleep_absolute(start_time);
         while !signal.get() && max_time.map(|max| max > (end_time - start_time)).unwrap_or(true) {
             // perform current job
-            let job_start_time = next_activation;
+            let job_start_time = clock::Monotonic::now();
             cpu_hogger.hog();
             let job_end_time = clock::Monotonic::now();
 
